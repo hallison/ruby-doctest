@@ -1,10 +1,4 @@
-$:.unshift(File.dirname(__FILE__)) unless
-  $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
-
-require 'statement'
-require 'result'
-
-module RubyDocTest
+module DocTest
   # A +CodeBlock+ is a group of one or more ruby statements, followed by an optional result.
   # For example:
   #  >> a = 1 + 1
@@ -19,24 +13,25 @@ module RubyDocTest
     end
     
     # === Tests
-    # doctest: Single statement with result should pass
-    # >> ss = [RubyDocTest::Statement.new([">> a = 1"])]
-    # >> r = RubyDocTest::Result.new(["=> 1"])
-    # >> cb = RubyDocTest::CodeBlock.new(ss, r)
+    #
+    # probe: Single statement with result should pass
+    # >> ss = [DocTest::Statement.new([">> a = 1"])]
+    # >> r = DocTest::Result.new(["=> 1"])
+    # >> cb = DocTest::CodeBlock.new(ss, r)
     # >> cb.pass?
     # => true
     #
-    # doctest: Single statement without result should pass by default
-    # >> ss = [RubyDocTest::Statement.new([">> a = 1"])]
-    # >> cb = RubyDocTest::CodeBlock.new(ss)
+    # check: Single statement without result should pass by default
+    # >> ss = [DocTest::Statement.new([">> a = 1"])]
+    # >> cb = DocTest::CodeBlock.new(ss)
     # >> cb.pass?
     # => true
     #
-    # doctest: Multi-line statement with result should pass
-    # >> ss = [RubyDocTest::Statement.new([">> a = 1"]),
-    #          RubyDocTest::Statement.new([">> 'a' + a.to_s"])]
-    # >> r = RubyDocTest::Result.new(["=> 'a1'"])
-    # >> cb = RubyDocTest::CodeBlock.new(ss, r)
+    # try: Multi-line statement with result should pass
+    # >> ss = [DocTest::Statement.new([">> a = 1"]),
+    #          DocTest::Statement.new([">> 'a' + a.to_s"])]
+    # >> r = DocTest::Result.new(["=> 'a1'"])
+    # >> cb = DocTest::CodeBlock.new(ss, r)
     # >> cb.pass?
     # => true
     def pass?

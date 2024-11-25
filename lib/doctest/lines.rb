@@ -1,4 +1,4 @@
-module RubyDocTest
+module DocTest
   # === Description
   # Keeps track of which lines within a document belong to a group.  Line groups are
   # determined by their indentation level, as in the Python programming language.
@@ -25,12 +25,12 @@ module RubyDocTest
     
     # === Tests
     # doctest: Return an array of 1 line if there is only one line
-    # >> l = RubyDocTest::Lines.new(["line 1"])
+    # >> l = DocTest::Lines.new(["line 1"])
     # >> l.lines
     # => ["line 1"]
     #
     # doctest: Remove indentation from lines 2 to the end of this Lines group.
-    # >> l = RubyDocTest::Lines.new(["line 1", "  line 2", "  line 3", "    line 4"])
+    # >> l = DocTest::Lines.new(["line 1", "  line 2", "  line 3", "    line 4"])
     # >> l.lines
     # => ["line 1", "line 2", "line 3", "  line 4"]
     def lines
@@ -53,7 +53,7 @@ module RubyDocTest
     # Calculate the range of python-like indentation within this Lines group
     #
     # === Tests
-    # >> l = RubyDocTest::Lines.new([])
+    # >> l = DocTest::Lines.new([])
     #
     # doctest: Return a range of one line when there is only one line to begin with
     # >> l.range %w(a), 0
@@ -98,7 +98,7 @@ module RubyDocTest
     protected
     
     # === Tests
-    # >> l = RubyDocTest::Lines.new([])
+    # >> l = DocTest::Lines.new([])
     #
     # doctest: Get a whitespace indent from a line with whitespace
     # >> l.send :indentation, [" a"], 0
@@ -120,7 +120,7 @@ module RubyDocTest
     # Get lines from +start_index+ up to the end of the document.
     #
     # === Tests
-    # >> l = RubyDocTest::Lines.new([])
+    # >> l = DocTest::Lines.new([])
     # 
     # doctest: Return an empty array if start_index is out of bounds
     # >> l.send :remaining_lines, [], 1

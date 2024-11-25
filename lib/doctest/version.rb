@@ -1,4 +1,4 @@
-module Rubydoctest #:nodoc:
+module Doctest #:nodoc:
   module VERSION #:nodoc:
     MAJOR = 1
     MINOR = 1

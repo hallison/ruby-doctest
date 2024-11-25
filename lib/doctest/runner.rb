@@ -1,14 +1,4 @@
-$:.unshift(File.dirname(__FILE__)) unless
-  $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
-
-require 'rubydoctest'
-require 'statement'
-require 'result'
-require 'special_directive'
-require 'code_block'
-require 'test'
-
-module RubyDocTest
+module DocTest
   class Runner
     attr_reader :groups, :blocks, :tests
     
@@ -46,21 +36,21 @@ module RubyDocTest
     # === Tests
     # 
     # doctest: Runner mode should default to :doctest and :ruby from the filename
-    # >> r = RubyDocTest::Runner.new("", "test.doctest")
+    # >> r = DocTest::Runner.new("", "test.doctest")
     # >> r.mode
     # => :doctest
     #
-    # >> r = RubyDocTest::Runner.new("", "test.rb")
+    # >> r = DocTest::Runner.new("", "test.rb")
     # >> r.mode
     # => :ruby
     #
     # doctest: The src_lines should be separated into an array
-    # >> r = RubyDocTest::Runner.new("a\nb\n", "test.doctest")
+    # >> r = DocTest::Runner.new("a\nb\n", "test.doctest")
     # >> r.instance_variable_get("@src_lines")
     # => ["a", "b"]
-    def initialize(src, file_name = "test.doctest", initial_mode = nil)
+    def initialize(src, file_name = "test.doctest", initial_mode = :ruby)
       @src, @file_name = src, file_name
-      @mode = initial_mode || (File.extname(file_name) == ".rb" ? :ruby : :doctest)
+      @mode = initial_mode || :doctest
       
       @src_lines = src.split("\n")
       @groups, @blocks = [], []
@@ -68,7 +58,7 @@ module RubyDocTest
     end
     
     # doctest: Using the doctest_require: SpecialDirective should require a file relative to the current one.
-    # >> r = RubyDocTest::Runner.new("# doctest_require: 'doctest_require.rb'", __FILE__)
+    # >> r = DocTest::Runner.new("# doctest_require: 'doctest_require.rb'", __FILE__)
     # >> r.prepare_tests
     # >> is_doctest_require_successful?
     # => true
@@ -82,7 +72,7 @@ module RubyDocTest
     # === Tests
     # doctest: Run through a simple inline doctest (rb) file and see if it passes
     # >> file = File.join(File.dirname(__FILE__), "..", "test", "inline.rb")
-    # >> r = RubyDocTest::Runner.new(IO.read(file), "inline.rb")
+    # >> r = DocTest::Runner.new(IO.read(file), "inline.rb")
     # >> r.pass?
     # => true
     def pass?
@@ -103,11 +93,11 @@ module RubyDocTest
     end
     
     def format_color(text, color)
-      @@color[RubyDocTest.output_format][color] % text.to_s
+      @@color[Configuration.output_format][color] % text.to_s
     end
     
     def escape(text)
-      case RubyDocTest.output_format
+      case Configuration.output_format
       when :html
         text.gsub("<", "&lt;").gsub(">", "&gt;")
       else
@@ -123,8 +113,8 @@ module RubyDocTest
       ok, fail, err = 0, 0, 0
       @tests.each_with_index do |t, index|
         if SpecialDirective === t and t.name == "!!!"
-          start_irb unless RubyDocTest.ignore_interactive
-        elsif RubyDocTest.tests.nil? or RubyDocTest.tests.include?(index + 1)
+          start_irb unless Configuration.ignore_interactive
+        elsif Configuration.tests.nil? or Configuration.tests.include?(index + 1)
           begin
             if t.pass?
               ok += 1
@@ -157,7 +147,7 @@ module RubyDocTest
                 "  from #{@file_name}:#{e.statement.line_number}" + newline +
                 e.statement.source_code,
               :yellow)
-            if RubyDocTest.verbose
+            if Configuration.verbose
               detail += format_color(newline + e.original_exception.backtrace.join("\n"), :red)
             end
           end
@@ -180,17 +170,17 @@ module RubyDocTest
     # 
     # doctest: Non-statement lines get ignored while statement / result lines are included
     #          Default mode is :doctest, so non-irb prompts should be ignored.
-    # >> r = RubyDocTest::Runner.new("a\nb\n >> c = 1\n => 1")
+    # >> r = DocTest::Runner.new("a\nb\n >> c = 1\n => 1")
     # >> groups = r.read_groups
     # >> groups.size
     # => 2
     #
     # doctest: Group types are correctly created
     # >> groups.map{ |g| g.class }
-    # => [RubyDocTest::Statement, RubyDocTest::Result]
+    # => [DocTest::Statement, DocTest::Result]
     #
     # doctest: A ruby document can have =begin and =end blocks in it
-    # >> r = RubyDocTest::Runner.new(<<-RUBY, "test.rb")
+    # >> r = DocTest::Runner.new(<<-RUBY, "test.rb")
     #    some_ruby_code = 1
     #    =begin
     #     this is a normal ruby comment
@@ -264,7 +254,7 @@ module RubyDocTest
     # 
     # doctest: The organize_blocks method should separate Statement, Result and SpecialDirective
     #          objects into CodeBlocks.
-    # >> r = RubyDocTest::Runner.new(">> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
+    # >> r = DocTest::Runner.new(">> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
     # >> r.prepare_tests
     # 
     # >> r.blocks.first.statements.map{|s| s.lines}
@@ -281,11 +271,11 @@ module RubyDocTest
     #
     # doctest: Two doctest directives--each having its own statement--should be separated properly
     #          by organize_blocks.
-    # >> r = RubyDocTest::Runner.new("doctest: one\n>> t = 1\ndoctest: two\n>> t + 2", "test.doctest")
+    # >> r = DocTest::Runner.new("doctest: one\n>> t = 1\ndoctest: two\n>> t + 2", "test.doctest")
     # >> r.prepare_tests
     # >> r.blocks.map{|b| b.class}
-    # => [RubyDocTest::SpecialDirective, RubyDocTest::CodeBlock,
-    #     RubyDocTest::SpecialDirective, RubyDocTest::CodeBlock]
+    # => [DocTest::SpecialDirective, DocTest::CodeBlock,
+    #     DocTest::SpecialDirective, DocTest::CodeBlock]
     #
     # >> r.blocks[0].value
     # => "one"
@@ -310,11 +300,11 @@ module RubyDocTest
           current_statements = []
         when SpecialDirective
           case g.name
-          when "doctest:", "it:"
+          when 'test:', 'it:'
             blocks << CodeBlock.new(current_statements) unless current_statements.empty?
             current_statements = []
             blocks << g
-          when "doctest_require:"
+          when 'test-require:'
             doctest_require = eval(g.value, TOPLEVEL_BINDING, @file_name, g.line_number)
             if doctest_require.is_a? String
               require_relative_to_file_name(doctest_require, @file_name)
@@ -322,7 +312,7 @@ module RubyDocTest
             blocks << g
           when "!!!"
             # ignore
-            unless RubyDocTest.ignore_interactive
+            unless Configuration.ignore_interactive
               fake_statement = Object.new
               runner = self
               (class << fake_statement; self; end).send(:define_method, :evaluate) do
@@ -338,10 +328,9 @@ module RubyDocTest
     end
     
     def require_relative_to_file_name(file_name, relative_to)
-      load_path = $:.dup
       $:.unshift File.expand_path(File.join(File.dirname(relative_to), File.dirname(file_name)))
-      if RubyDocTest.verbose
-        puts "doctest_require: [#{File.expand_path(File.join(File.dirname(relative_to), File.dirname(file_name)))}] #{File.basename(file_name)}"
+      if Configuration.verbose
+        puts "test-require: [#{File.expand_path(File.join(File.dirname(relative_to), File.dirname(file_name)))}] #{File.basename(file_name)}"
       end
       require File.basename(file_name)
     ensure
@@ -350,8 +339,8 @@ module RubyDocTest
     
     # === Tests
     # 
-    # doctest: Tests should be organized into groups based on the 'doctest' SpecialDirective
-    # >> r = RubyDocTest::Runner.new("doctest: one\n>> t = 1\ndoctest: two\n>> t + 2", "test.doctest")
+    # test: Tests should be organized into groups based on the 'doctest' SpecialDirective
+    # >> r = DocTest::Runner.new("doctest: one\n>> t = 1\ndoctest: two\n>> t + 2", "test.doctest")
     # >> r.prepare_tests
     # >> r.tests.size
     # => 2
@@ -364,8 +353,8 @@ module RubyDocTest
     # >> r.tests[1].description
     # => "two"
     #
-    # doctest: Without a 'doctest' SpecialDirective, there is one Test called "Default Test".
-    # >> r = RubyDocTest::Runner.new(">> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
+    # test: Without a 'doctest' SpecialDirective, there is one Test called "Default Test".
+    # >> r = DocTest::Runner.new(">> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
     # >> r.prepare_tests
     # >> r.tests.size
     # => 1
@@ -376,8 +365,8 @@ module RubyDocTest
     # >> r.tests.first.code_blocks.size
     # => 2
     #
-    # doctest: When using the "it:" directive, it should re-append "it" to the description;
-    # >> r = RubyDocTest::Runner.new("it: should behave\n>> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
+    # test: When using the "it:" directive, it should re-append "it" to the description;
+    # >> r = DocTest::Runner.new("it: should behave\n>> t = 1\n>> t + 2\n=> 3\n>> u = 1", "test.doctest")
     # >> r.prepare_tests
     # >> r.tests.size
     # => 1
@@ -397,7 +386,7 @@ module RubyDocTest
           (assigned_blocks || unassigned_blocks) << g
         when SpecialDirective
           case g.name
-          when "doctest:"
+          when "test:"
             assigned_blocks = []
             tests << Test.new(g.value, assigned_blocks)
           when "it:"
