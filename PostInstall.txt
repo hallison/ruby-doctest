@@ -1,7 +1,0 @@
-
-rubydoctest comes as an executable that takes a list of files:
-	
-	rubydoctest lib/*.rb
-	rubydoctest simple.doctest
-
-
